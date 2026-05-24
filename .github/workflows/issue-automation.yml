@@ -305,7 +305,13 @@ jobs:
               const authoredIssues = authoredItems.filter(
                 (item) => !item.pull_request && item.user && item.user.login === issue.user.login
               );
-              isFirstIssueInRepo = authoredIssues.every((item) => item.number === issueNumber);
+              const earlierAuthoredIssues = authoredIssues.filter((item) => item.number < issueNumber);
+              isFirstIssueInRepo = earlierAuthoredIssues.length === 0;
+              core.info(
+                isFirstIssueInRepo
+                  ? `Issue #${issueNumber} is the first issue opened by @${issue.user.login} in this repository.`
+                  : `@${issue.user.login} has ${earlierAuthoredIssues.length} earlier issue(s) in this repository.`
+              );
             } catch (error) {
               core.warning(`Unable to determine whether this is the author's first issue: ${error.message}`);
             }
