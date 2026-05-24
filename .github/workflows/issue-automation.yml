@@ -379,17 +379,26 @@ jobs:
                 issue_number: issueNumber,
                 per_page: 100
               });
-              const alreadyResponded = comments.some((comment) => (comment.body || '').includes(marker));
-              if (!alreadyResponded) {
+              const nextCommentBody = [marker, ...responseSections].join('\n\n');
+              const automationComment = comments.find((comment) => (comment.body || '').includes(marker));
+              if (!automationComment) {
                 await github.rest.issues.createComment({
                   owner,
                   repo,
                   issue_number: issueNumber,
-                  body: [marker, ...responseSections].join('\n\n')
+                  body: nextCommentBody
                 });
                 core.info('Posted automated issue response.');
+              } else if ((automationComment.body || '') !== nextCommentBody) {
+                await github.rest.issues.updateComment({
+                  owner,
+                  repo,
+                  comment_id: automationComment.id,
+                  body: nextCommentBody
+                });
+                core.info('Updated existing automated issue response.');
               } else {
-                core.info('Automated response already exists; skipping duplicate comment.');
+                core.info('Automated response already up to date; skipping duplicate comment.');
               }
             } catch (error) {
               core.warning(`Unable to post automated response: ${error.message}`);
